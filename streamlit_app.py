@@ -83,7 +83,6 @@ def bbc(url):
         st.error(f"An error occurred while scraping BBC: {e}")
         return []
 
-
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 st.title("Article Scraper & Summarizer")
 source = st.radio("Choose a news source:", ["Times of India", "BBC"])
@@ -98,11 +97,23 @@ if st.button("Summarize"):
             data = bbc(url)
 
         if data:
+            microlink_url = f"https://api.microlink.io/?url={url}&screenshot=true&meta=true"
+            response = requests.get(microlink_url)
+            article_data = response.json()["data"]
+                
+            #screenshot and link using microlink
+            st.image(article_data["screenshot"]["url"], caption="Article Preview", use_container_width=True)
+            st.link_button("Read Full Article", article_data["url"])
+
+            for article in data:
+                st.markdown("**Summary:**")
+                st.info(article["Summary"])
+                st.markdown("---")
             df = pd.DataFrame(data)
             st.dataframe(df)
 
             csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(label="Download Summary as CSV", data=csv, file_name="article_data.csv", mime="text/csv")
+            st.download_button(label="Download as CSV", data=csv, file_name="article_data.csv", mime="text/csv")
 
             if st.button("Reset"):
                 st.experimental_rerun()
